@@ -7,7 +7,13 @@ process.
 
 ## Building
 
-First, make sure to generate protobuf files:
+Install dependencies:
+
+```bash
+go mod download
+```
+
+Generate protobuf files:
 
 ```bash
 make proto
