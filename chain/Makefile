@@ -1,4 +1,4 @@
-.PHONY: build proto
+.PHONY: build proto generate
 
 # Build the binary
 build:
@@ -9,3 +9,6 @@ proto:
 	protoc \
 		--go_out=paths=source_relative:. \
 		./proto/codec.proto
+
+generate:
+	go generate ./...

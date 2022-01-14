@@ -2,7 +2,7 @@ syntax = "proto3";
 
 option go_package = "github.com/figment-networks/graph-instrumentation-example/chain/proto;pbcodec";
 
-package sf.thechain.codec.v1;
+package sf.dummychain.codec.v1;
 
 message Block {
   uint64 height = 1;
