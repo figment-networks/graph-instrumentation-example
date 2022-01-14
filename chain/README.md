@@ -7,6 +7,13 @@ process.
 
 ## Building
 
+Clone the repository:
+
+```bash
+git clone git@github.com:figment-networks/graph-instrumentation-example.git
+cd graph-instrumentation-example
+```
+
 Install dependencies:
 
 ```bash
