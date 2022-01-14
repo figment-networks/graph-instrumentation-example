@@ -14,16 +14,20 @@ import (
 
 var (
 	Enabled bool
-	writer  io.Writer
+	writer  io.WriteCloser
 )
 
-func Enable(w io.Writer) {
+func Enable(w io.WriteCloser) {
 	Enabled = true
 	writer = w
 }
 
-func SetWriter(w io.Writer) {
+func SetWriter(w io.WriteCloser) {
 	writer = w
+}
+
+func Shutdown() {
+	writer.Close()
 }
 
 // BeginBlock marks the beginning of the block data for a single height
