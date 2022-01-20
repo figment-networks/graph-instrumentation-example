@@ -83,8 +83,6 @@ func (r *LogReader) parseLine(line string) (*LogEntry, error) {
 		entry.Data = tokens[1]
 	case "TX":
 		entry.Data = tokens[1]
-	case "VSET_UPDATE":
-		entry.Data = tokens[1]
 	default:
 		return nil, fmt.Errorf("unsupported kind: %v", entry.Kind)
 	}
@@ -125,8 +123,6 @@ func (r *LogReader) processLine(line string) (interface{}, error) {
 		// TODO: process block data
 	case "TX":
 		// TODO: process tx data
-	case "VSET_UPDATE":
-		// TODO: process message
 	default:
 		return nil, fmt.Errorf("unknown message kind %q", entry.Kind)
 	}
