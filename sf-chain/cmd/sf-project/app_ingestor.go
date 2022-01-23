@@ -7,12 +7,13 @@ import (
 	"io"
 	"os"
 
-	"github.com/figment-networks/sf-project-template/codec"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/streamingfast/dlauncher/launcher"
 	"github.com/streamingfast/shutter"
 	"go.uber.org/zap"
+
+	"github.com/figment-networks/graph-instrumentation-example/sf-chain/codec"
 )
 
 type IngestorApp struct {

@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/figment-networks/sf-project-template/codec"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/streamingfast/bstream"
@@ -18,6 +17,8 @@ import (
 	firehoseApp "github.com/streamingfast/firehose/app/firehose"
 	"github.com/streamingfast/logging"
 	"go.uber.org/zap"
+
+	"github.com/figment-networks/graph-instrumentation-example/sf-chain/codec"
 )
 
 var (

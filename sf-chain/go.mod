@@ -1,8 +1,9 @@
-module github.com/figment-networks/sf-project-template
+module github.com/figment-networks/graph-instrumentation-example/sf-chain
 
 go 1.17
 
 require (
+	github.com/figment-networks/graph-instrumentation-example/chain v0.0.0-20220120165813-bc32a1aad82a
 	github.com/lithammer/dedent v1.1.0
 	github.com/logrusorgru/aurora v2.0.3+incompatible
 	github.com/spf13/cobra v1.3.0
