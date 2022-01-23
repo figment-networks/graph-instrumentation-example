@@ -37,13 +37,16 @@ make build
 Run `./chain --help` to see list of all available flags:
 
 ```
-Usage of ./chain:
-  -block-rate int
-    	Number of blocks to produce per second (default 1)
-  -log-level string
-    	Log level (default "info")
-  -store-dir string
-    	Directory to store blocks data (default "./data")
+Usage:
+  chain [OPTIONS]
+
+Application Options:
+      --log-level=  Logging level (default: info)
+      --store-dir=  Directory for storing blocks data (default: ./data)
+      --block-rate= Block production rate (per second) (default: 1)
+
+Help Options:
+  -h, --help        Show this help message
 ```
 
 To start the chain, run:

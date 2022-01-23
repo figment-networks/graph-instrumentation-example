@@ -2,11 +2,11 @@ package main
 
 import (
 	"context"
-	"flag"
 	"os"
 	"os/signal"
 	"syscall"
 
+	"github.com/jessevdk/go-flags"
 	"github.com/sirupsen/logrus"
 
 	"github.com/figment-networks/graph-instrumentation-example/chain/core"
@@ -14,34 +14,34 @@ import (
 )
 
 var cliOpts = struct {
-	logLevel  string
-	storeDir  string
-	blockRate int
+	LogLevel  string `long:"log-level" description:"Logging level" default:"info"`
+	StoreDir  string `long:"store-dir" description:"Directory for storing blocks data" default:"./data"`
+	BlockRate int    `long:"block-rate" description:"Block production rate (per second)" default:"1"`
 }{}
 
-func init() {
-	flag.StringVar(&cliOpts.storeDir, "store-dir", "./data", "Directory to store blocks data")
-	flag.IntVar(&cliOpts.blockRate, "block-rate", 1, "Number of blocks to produce per second")
-	flag.StringVar(&cliOpts.logLevel, "log-level", "info", "Log level")
-	flag.Parse()
+func main() {
+	if _, err := flags.ParseArgs(&cliOpts, os.Args); err != nil {
+		return
+	}
 
-	level, err := logrus.ParseLevel(cliOpts.logLevel)
+	level, err := logrus.ParseLevel(cliOpts.LogLevel)
 	if err != nil {
 		logrus.Fatal(err)
-		return
+	}
+
+	if cliOpts.BlockRate < 1 {
+		logrus.Fatal("block rate option must be greater than 1")
 	}
 
 	logrus.SetLevel(level)
 	logrus.SetFormatter(&logrus.TextFormatter{FullTimestamp: true})
-}
 
-func main() {
 	if os.Getenv("DM_ENABLED") == "1" {
 		initDeepMind()
 		defer deepmind.Shutdown()
 	}
 
-	node := core.NewNode(cliOpts.storeDir, cliOpts.blockRate)
+	node := core.NewNode(cliOpts.StoreDir, cliOpts.BlockRate)
 
 	if err := node.Initialize(); err != nil {
 		logrus.WithError(err).Fatal("node failed to initialize")
