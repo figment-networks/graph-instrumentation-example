@@ -1,0 +1,44 @@
+name: Build
+
+on: push
+
+jobs:
+  chain:
+    name: Build chain
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.17
+
+      - run: go mod download
+        working-directory: ./chain
+
+      - run: make build
+        working-directory: ./chain
+
+  sf-chain:
+    name: Build sf-chain
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.17
+
+      - run: go mod download
+        working-directory: ./sf-chain
+
+      - run: make build
+        working-directory: ./sf-chain
