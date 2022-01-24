@@ -11,7 +11,7 @@ Clone the repository:
 
 ```bash
 git clone git@github.com:figment-networks/graph-instrumentation-example.git
-cd graph-instrumentation-example
+cd graph-instrumentation-example/chain
 ```
 
 Install dependencies:

@@ -1,6 +1,6 @@
 .PHONY: build
 build:
-	go build -o ./build/sf-project ./cmd/sf-project
+	go build -o ./build/sf-chain ./cmd/sf-chain
 
 .PHONY: setup
 setup:
@@ -25,3 +25,4 @@ update-sf-deps:
 	go get github.com/streamingfast/merger@develop
 	go get github.com/streamingfast/pbgo@develop
 	go get github.com/streamingfast/relayer@develop
+	go mod tidy
