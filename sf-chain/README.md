@@ -25,5 +25,24 @@ make build
 
 ## Usage
 
-TBD
+To see usage example, run: `./build/sf-chain --help`:
+
+```
+Project on StreamingFast
+
+Usage:
+  sf-project [command]
+
+Available Commands:
+  completion  Generate the autocompletion script for the specified shell
+  help        Help about any command
+  init        Initialize local configuration
+  setup       Configures and initializes the project files
+  start       Starts all services at once
+
+Flags:
+  -h, --help   help for sf-project
+
+Use "sf-project [command] --help" for more information about a command.
+```
 
