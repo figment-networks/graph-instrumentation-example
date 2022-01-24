@@ -52,13 +52,23 @@ func (app *IngestorApp) Run() error {
 		}
 	}()
 
-	// TODO: Rework this
-	buf := make([]byte, 50*1024*1024)
-	scanner := bufio.NewScanner(src)
-	scanner.Buffer(buf, 50*1024*1024)
+	scanner := bufio.NewReaderSize(src, 50*1024*1024)
 
-	for scanner.Scan() {
-		lines <- scanner.Text()
+	for {
+		line, err := scanner.ReadString('\n')
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+
+			if len(line) == 0 {
+				return err
+			}
+		}
+
+		if len(line) > 0 {
+			lines <- line[0 : len(line)-1]
+		}
 	}
 
 	return nil
