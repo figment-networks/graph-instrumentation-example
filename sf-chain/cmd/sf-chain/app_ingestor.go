@@ -25,15 +25,9 @@ func (app *IngestorApp) Run() error {
 	zlog.Info("starting ingestor", zap.String("logs-dir", app.logsDir))
 	defer zlog.Info("stopped ingestor")
 
-	src, err := os.Open("<SOURCE>")
-	if err != nil {
-		return err
-	}
-	defer src.Close()
+	linesChan := make(chan string)
 
-	lines := make(chan string)
-
-	reader, err := codec.NewLogReader(lines, "DMLOG")
+	reader, err := codec.NewLogReader(linesChan, "DMLOG")
 	if err != nil {
 		return err
 	}
@@ -52,7 +46,7 @@ func (app *IngestorApp) Run() error {
 		}
 	}()
 
-	scanner := bufio.NewReaderSize(src, 50*1024*1024)
+	scanner := bufio.NewReaderSize(os.Stdin, 50*1024*1024)
 
 	for {
 		line, err := scanner.ReadString('\n')
@@ -67,7 +61,7 @@ func (app *IngestorApp) Run() error {
 		}
 
 		if len(line) > 0 {
-			lines <- line[0 : len(line)-1]
+			linesChan <- line[0 : len(line)-1]
 		}
 	}
 
@@ -85,18 +79,21 @@ func init() {
 	}
 
 	initFunc := func(runtime *launcher.Runtime) (err error) {
-		dir := viper.GetString("ingestor-logs-dir")
-		if dir == "" {
-			return errors.New("ingestor logs dir must be set")
-		}
+		switch viper.GetString("ingestor-mode") {
+		case "logs":
+			dir := viper.GetString("ingestor-logs-dir")
+			if dir == "" {
+				return errors.New("ingestor logs dir must be set")
+			}
 
-		dir, err = expandDir(dir)
-		if err != nil {
-			return err
-		}
+			dir, err = expandDir(dir)
+			if err != nil {
+				return err
+			}
 
-		if !dirExists(dir) {
-			return errors.New("ingestor logs dir must exist")
+			if !dirExists(dir) {
+				return errors.New("ingestor logs dir must exist")
+			}
 		}
 
 		return nil

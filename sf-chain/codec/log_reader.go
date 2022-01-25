@@ -1,10 +1,14 @@
 package codec
 
 import (
+	"encoding/base64"
 	"fmt"
 	"io"
 	"strconv"
 	"strings"
+
+	pbcodec "github.com/figment-networks/graph-instrumentation-example/chain/proto"
+	"google.golang.org/protobuf/proto"
 )
 
 type LogReader struct {
@@ -73,7 +77,7 @@ func (r *LogReader) parseLine(line string) (*LogEntry, error) {
 	}
 
 	switch entry.Kind {
-	case "BEGIN", "END":
+	case "BLOCK_BEGIN", "BLOCK_END":
 		val, err := strconv.ParseUint(tokens[1], 10, 64)
 		if err != nil {
 			return nil, err
@@ -100,7 +104,7 @@ func (r *LogReader) processLine(line string) (interface{}, error) {
 	}
 
 	switch entry.Kind {
-	case "BEGIN":
+	case "BLOCK_BEGIN":
 		height := entry.Data.(uint64)
 
 		if r.parseCtx != nil && height < r.parseCtx.Height+1 {
@@ -108,7 +112,7 @@ func (r *LogReader) processLine(line string) (interface{}, error) {
 		}
 
 		r.parseCtx = &ParseCtx{Height: height}
-	case "END":
+	case "BLOCK_END":
 		height := entry.Data.(uint64)
 
 		if r.parseCtx == nil {
@@ -118,14 +122,24 @@ func (r *LogReader) processLine(line string) (interface{}, error) {
 			return nil, fmt.Errorf("invalid end marker at height %v", height)
 		}
 
-		return r.parseCtx.Height, nil
+		return r.parseCtx, nil
 	case "BLOCK":
-		// TODO: process block data
+		block := &pbcodec.Block{}
+		return parseFromProto(entry.Data.(string), block)
 	case "TX":
-		// TODO: process tx data
+		tx := &pbcodec.Transaction{}
+		return parseFromProto(entry.Data.(string), tx)
 	default:
 		return nil, fmt.Errorf("unknown message kind %q", entry.Kind)
 	}
 
 	return nil, nil
+}
+
+func parseFromProto(data string, message proto.Message) (proto.Message, error) {
+	buf, err := base64.StdEncoding.DecodeString(data)
+	if err != nil {
+		return nil, err
+	}
+	return message, proto.Unmarshal(buf, message)
 }
