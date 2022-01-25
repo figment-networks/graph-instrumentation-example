@@ -25,7 +25,7 @@ func init() {
 
 	launcher.SetupLogger(&launcher.LoggingOptions{
 		WorkingDir:    "./data",
-		Verbosity:     0,
+		Verbosity:     3,
 		LogFormat:     "text",
 		LogToFile:     false,
 		LogListenAddr: "localhost:4444",
