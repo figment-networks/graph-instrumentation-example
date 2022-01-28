@@ -25,4 +25,6 @@ update-sf-deps:
 	go get github.com/streamingfast/merger@develop
 	go get github.com/streamingfast/pbgo@develop
 	go get github.com/streamingfast/relayer@develop
+	go get github.com/streamingfast/node-manager@develop
+	go get github.com/streamingfast/shutter@develop
 	go mod tidy

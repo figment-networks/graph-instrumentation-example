@@ -17,7 +17,7 @@ func NewBlockWriter(writer io.Writer) (*BlockWriter, error) {
 	dbinWriter := dbin.NewWriter(writer)
 
 	// TODO: Replace the content type below!
-	err := dbinWriter.WriteHeader("<TODO>", 1)
+	err := dbinWriter.WriteHeader("DUM", 1)
 	if err != nil {
 		return nil, fmt.Errorf("unable to write file header: %s", err)
 	}

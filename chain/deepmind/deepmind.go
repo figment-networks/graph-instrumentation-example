@@ -42,6 +42,7 @@ func Block(block *types.Block) {
 		Hash:         block.Hash,
 		PrevHash:     block.PrevHash,
 		Transactions: make([]*pbcodec.Transaction, len(block.Transactions)),
+		Timestamp:    uint64(block.Timestamp.UnixNano()),
 	}
 
 	for idx, tx := range block.Transactions {
