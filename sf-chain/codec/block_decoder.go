@@ -11,8 +11,9 @@ import (
 )
 
 func blockDecoder(blk *bstream.Block) (interface{}, error) {
+	// TODO: Switch to correct protocol number
 	if blk.Kind() != pbbstream.Protocol_UNKNOWN {
-		return nil, fmt.Errorf("expected kind %s, got %s", pbbstream.Protocol_TENDERMINT, blk.Kind())
+		return nil, fmt.Errorf("expected kind %s, got %s", pbbstream.Protocol_UNKNOWN, blk.Kind())
 	}
 
 	if blk.Version() != 1 {
