@@ -4,10 +4,10 @@ import (
 	"bufio"
 	"context"
 	"errors"
-	"fmt"
 	"io"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -27,75 +27,28 @@ import (
 	"github.com/figment-networks/graph-instrumentation-example/sf-chain/codec"
 )
 
-type IngestorApp struct {
-	*shutter.Shutter
-	logsDir string
-
-	mrp *mindreader.MindReaderPlugin
-}
-
-func (app *IngestorApp) Run() error {
-	zlog.Info("starting ingestor", zap.String("logs-dir", app.logsDir))
-	defer zlog.Info("stopped ingestor")
-
-	linesChan := make(chan string)
-
-	reader, err := codec.NewLogReader(linesChan, "DMLOG")
-	if err != nil {
-		return err
-	}
-
-	go func() {
-		for {
-			data, err := reader.Read()
-			if err != nil && err != io.EOF {
-				zlog.Error("log reader error", zap.Error(err))
-				reader.Close()
-				return
-			}
-
-			// TODO: process the data
-			fmt.Println("Data:", data)
-		}
-	}()
-
-	scanner := bufio.NewReaderSize(os.Stdin, 50*1024*1024)
-
-	for {
-		line, err := scanner.ReadString('\n')
-		if err != nil {
-			if err == io.EOF {
-				break
-			}
-
-			if len(line) == 0 {
-				return err
-			}
-		}
-
-		if len(line) > 0 {
-			linesChan <- line[0 : len(line)-1]
-		}
-	}
-
-	return nil
-}
+const (
+	modeLogs  = "logs"
+	modeStdin = "stdin"
+)
 
 func init() {
-	flags := func(cmd *cobra.Command) error {
-		cmd.Flags().String("ingestor-mode", "logs", "mode of operation")
-		cmd.Flags().String("ingestor-logs-dir", "", "directory where instrumentation logs are stored")
-		cmd.Flags().String("ingestor-logs-pattern", ".log", "pattern of the log files")
-		cmd.Flags().Bool("ingestor-logs-watch", true, "exit when all matched files are processed")
+	registerFlags := func(cmd *cobra.Command) error {
+		flags := cmd.Flags()
 
-		cmd.Flags().String("mindreader-node-working-dir", "{sf-data-dir}/workdir", "Path where mindreader will stores its files")
+		flags.String("ingestor-mode", modeStdin, "mode of operation")
+		flags.String("ingestor-logs-dir", "", "directory where instrumentation logs are stored")
+		flags.String("ingestor-logs-pattern", ".log", "pattern of the log files")
+		flags.Bool("ingestor-logs-watch", true, "exit when all matched files are processed")
+		flags.Int("ingestor-line-buffer-size", 10*1024*1024, "line reader buffer size")
+		flags.String("mindreader-node-working-dir", "{sf-data-dir}/workdir", "Path where mindreader will stores its files")
 
 		return nil
 	}
 
 	initFunc := func(runtime *launcher.Runtime) (err error) {
 		switch viper.GetString("ingestor-mode") {
-		case "logs":
+		case modeLogs:
 			dir := viper.GetString("ingestor-logs-dir")
 			if dir == "" {
 				return errors.New("ingestor logs dir must be set")
@@ -130,7 +83,7 @@ func init() {
 		blocksChanCapacity := viper.GetInt("mindreader-node-blocks-chan-capacity")
 		appLogger := zap.NewNop()
 
-		tracker := bstream.NewTracker(50)
+		tracker := bstream.NewTracker(50) // TODO: make a flag
 		tracker.AddResolver(bstream.OffsetStartBlockResolver(1))
 
 		consoleReaderFactory := func(lines chan string) (mindreader.ConsolerReader, error) {
@@ -181,8 +134,10 @@ func init() {
 		}
 
 		return &IngestorApp{
-			Shutter: shutter.New(),
-			mrp:     mrp,
+			Shutter:        shutter.New(),
+			mrp:            mrp,
+			mode:           viper.GetString("ingestor-mode"),
+			lineBufferSize: viper.GetInt("ingestor-line-buffer-size"),
 		}, nil
 	}
 
@@ -192,7 +147,7 @@ func init() {
 		Description:   "Reads the log files produces by the instrumented node",
 		MetricsID:     "ingestor",
 		Logger:        launcher.NewLoggingDef("ingestor.*", nil),
-		RegisterFlags: flags,
+		RegisterFlags: registerFlags,
 		InitFunc:      initFunc,
 		FactoryFunc:   factoryFunc,
 	})
@@ -200,4 +155,52 @@ func init() {
 
 func headBlockUpdater(uint64, string, time.Time) {
 	// TODO: will need to be implemented somewhere
+}
+
+type IngestorApp struct {
+	*shutter.Shutter
+
+	mode           string
+	logsDir        string
+	lineBufferSize int
+
+	mrp *mindreader.MindReaderPlugin
+}
+
+func (app *IngestorApp) Run() error {
+	zlog.Info("starting ingestor", zap.String("mode", app.mode))
+	defer zlog.Info("stopped ingestor")
+
+	zlog.Info("starting ingestor mind reader plugin")
+	app.mrp.Launch()
+
+	go func() {
+		err := app.startScanner(os.Stdin)
+		zlog.Info("stanner finished", zap.Error(err))
+		app.mrp.Shutdown(err)
+	}()
+
+	<-app.mrp.Terminated()
+	return nil
+}
+
+func (app *IngestorApp) startScanner(src io.Reader) error {
+	scanner := bufio.NewReaderSize(os.Stdin, app.lineBufferSize)
+
+	for {
+		line, err := scanner.ReadString('\n')
+		if err != nil {
+			if err != io.EOF {
+				zlog.Error("got an error from readstring", zap.Error(err))
+				return err
+			}
+
+			if len(line) == 0 {
+				zlog.Info("finished reading source")
+				return nil
+			}
+		}
+
+		app.mrp.LogLine(strings.TrimSpace(line))
+	}
 }

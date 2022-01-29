@@ -2,40 +2,38 @@ package main
 
 import (
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"github.com/streamingfast/derr"
 	"github.com/streamingfast/dlauncher/flags"
 	"github.com/streamingfast/dlauncher/launcher"
-	"github.com/streamingfast/logging"
-	"go.uber.org/zap"
 )
 
 var (
-	userLog = launcher.UserLog
-	zlog    *zap.Logger
-
 	rootCmd = &cobra.Command{
-		Use:   "sf-project",
-		Short: "Project on StreamingFast",
+		Use:   "sf-chain",
+		Short: "Dummy chain on StreamingFast",
 	}
 )
 
-func init() {
-	logging.Register("main", &zlog)
-	logging.Set(logging.MustCreateLogger())
-
-	launcher.SetupLogger(&launcher.LoggingOptions{
-		WorkingDir:    "./data",
-		Verbosity:     3,
-		LogFormat:     "text",
-		LogToFile:     false,
-		LogListenAddr: "localhost:4444",
-	})
-}
-
 func main() {
 	cobra.OnInitialize(func() {
+		//
+		// This will allow setting flags via environment variables
+		// Example: SF_GLOBAL_VERBOSE=3 will set `global-verbose` flag
+		//
 		flags.AutoBind(rootCmd, "SF")
 	})
+
+	rootCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
+		launcher.SetupLogger(&launcher.LoggingOptions{
+			WorkingDir:    viper.GetString("global-data-dir"),
+			Verbosity:     viper.GetInt("global-verbose"),
+			LogFormat:     viper.GetString("global-log-format"),
+			LogToFile:     viper.GetBool("global-log-to-file"),
+			LogListenAddr: viper.GetString("global-log-level-switcher-listen-addr"),
+		})
+		return nil
+	}
 
 	rootCmd.AddCommand(
 		initCommand,
