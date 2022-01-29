@@ -41,12 +41,13 @@ Usage:
   chain [OPTIONS]
 
 Application Options:
-      --log-level=  Logging level (default: info)
-      --store-dir=  Directory for storing blocks data (default: ./data)
-      --block-rate= Block production rate (per second) (default: 1)
+      --genesis-height= Blockhain genesis height (default: 1)
+      --log-level=      Logging level (default: info)
+      --store-dir=      Directory for storing blocks data (default: ./data)
+      --block-rate=     Block production rate (per second) (default: 1)
 
 Help Options:
-  -h, --help        Show this help message
+  -h, --help            Show this help message
 ```
 
 To start the chain, run:
