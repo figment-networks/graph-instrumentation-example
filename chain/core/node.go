@@ -13,9 +13,9 @@ type Node struct {
 	store  Store
 }
 
-func NewNode(storeDir string, blockRate int) *Node {
+func NewNode(storeDir string, blockRate int, genesisHeight uint64) *Node {
 	return &Node{
-		engine: NewEngine(blockRate),
+		engine: NewEngine(genesisHeight, blockRate),
 		store:  NewStore(storeDir),
 	}
 }

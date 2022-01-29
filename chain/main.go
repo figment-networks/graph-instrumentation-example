@@ -14,9 +14,10 @@ import (
 )
 
 var cliOpts = struct {
-	LogLevel  string `long:"log-level" description:"Logging level" default:"info"`
-	StoreDir  string `long:"store-dir" description:"Directory for storing blocks data" default:"./data"`
-	BlockRate int    `long:"block-rate" description:"Block production rate (per second)" default:"1"`
+	GenesisHeight uint64 `long:"genesis-height" description:"Blockhain genesis height" default:"1"`
+	LogLevel      string `long:"log-level" description:"Logging level" default:"info"`
+	StoreDir      string `long:"store-dir" description:"Directory for storing blocks data" default:"./data"`
+	BlockRate     int    `long:"block-rate" description:"Block production rate (per second)" default:"1"`
 }{}
 
 func main() {
@@ -41,7 +42,11 @@ func main() {
 		defer deepmind.Shutdown()
 	}
 
-	node := core.NewNode(cliOpts.StoreDir, cliOpts.BlockRate)
+	node := core.NewNode(
+		cliOpts.StoreDir,
+		cliOpts.BlockRate,
+		cliOpts.GenesisHeight,
+	)
 
 	if err := node.Initialize(); err != nil {
 		logrus.WithError(err).Fatal("node failed to initialize")

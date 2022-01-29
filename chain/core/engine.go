@@ -11,17 +11,23 @@ import (
 )
 
 type Engine struct {
-	blockRate time.Duration
-	blockChan chan *types.Block
-	prevBlock *types.Block
+	genesisHeight uint64
+	blockRate     time.Duration
+	blockChan     chan *types.Block
+	prevBlock     *types.Block
 }
 
-func NewEngine(rate int) Engine {
+func NewEngine(genesisHeight uint64, rate int) Engine {
 	blockRate := time.Second / time.Duration(rate)
 
+	if genesisHeight == 0 {
+		genesisHeight = 1
+	}
+
 	return Engine{
-		blockRate: blockRate,
-		blockChan: make(chan *types.Block),
+		genesisHeight: genesisHeight,
+		blockRate:     blockRate,
+		blockChan:     make(chan *types.Block),
 	}
 }
 
@@ -56,14 +62,16 @@ func (e *Engine) createBlock() types.Block {
 		Transactions: []types.Transaction{},
 	}
 
-	if e.prevBlock != nil {
+	if e.prevBlock != nil { // Continue the chain
 		block.Height = e.prevBlock.Height + 1
 		block.Hash = makeHash(block.Height)
 		block.PrevHash = e.prevBlock.Hash
-	} else {
-		block.Height = 1
-		block.Hash = makeHash(block.Height)
-		block.PrevHash = makeHash(1)
+	} else { // Start from genesis height
+		logrus.WithField("height", e.genesisHeight).Info("starting from genesis block height")
+
+		block.Height = e.genesisHeight
+		block.Hash = makeHash(e.genesisHeight)
+		block.PrevHash = makeHash(e.genesisHeight)
 	}
 
 	for i := uint64(0); i < block.Height%10; i++ {
@@ -75,14 +83,7 @@ func (e *Engine) createBlock() types.Block {
 			Amount:   big.NewInt(int64(i * 1000000000)),
 			Fee:      big.NewInt(10000),
 			Success:  true,
-			Events: []types.Event{
-				{
-					Type: "token_transfer",
-					Attributes: []types.Attribute{
-						{Key: "foo", Value: "bar"},
-					},
-				},
-			},
+			Events:   e.generateEvents(block.Height),
 		}
 
 		block.Transactions = append(block.Transactions, tx)
@@ -90,4 +91,37 @@ func (e *Engine) createBlock() types.Block {
 
 	e.prevBlock = &block
 	return block
+}
+
+func (e *Engine) generateEvents(height uint64) []types.Event {
+	events := []types.Event{}
+
+	switch {
+	case height%3 == 0:
+		events = append(events, types.Event{
+			Type: "token_transfer",
+			Attributes: []types.Attribute{
+				{Key: "foo", Value: "bar"},
+			},
+		})
+	case height%5 == 0:
+		events = append(events, types.Event{
+			Type: "delegate",
+			Attributes: []types.Attribute{
+				{Key: "delegator", Value: "addr1"},
+				{Key: "validator", Value: "addr2"},
+				{Key: "amount", Value: "123456789"},
+			},
+		})
+	case height%3 == 0 && height%5 == 0:
+		events = append(events, types.Event{
+			Type: "coin_spent",
+			Attributes: []types.Attribute{
+				{Key: "spender", Value: "fizz"},
+				{Key: "amount", Value: "buzz"},
+			},
+		})
+	}
+
+	return events
 }
