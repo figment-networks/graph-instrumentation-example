@@ -70,7 +70,7 @@ func (e *Engine) createBlock() types.Block {
 		tx := types.Transaction{
 			Type:     "transfer",
 			Hash:     makeHash(fmt.Sprintf("%v-%v", block.Height, i)),
-			Sender:   "0xDEADBEAF",
+			Sender:   "0xDEADBEEF",
 			Receiver: "0xBAAAAAAD",
 			Amount:   big.NewInt(int64(i * 1000000000)),
 			Fee:      big.NewInt(10000),
