@@ -8,6 +8,7 @@ import (
 
 	"github.com/jessevdk/go-flags"
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
 
 	"github.com/figment-networks/graph-instrumentation-example/chain/core"
 	"github.com/figment-networks/graph-instrumentation-example/chain/deepmind"
@@ -37,35 +38,87 @@ func main() {
 	logrus.SetLevel(level)
 	logrus.SetFormatter(&logrus.TextFormatter{FullTimestamp: true})
 
-	if os.Getenv("DM_ENABLED") == "1" {
-		initDeepMind()
-		defer deepmind.Shutdown()
+	root := cobra.Command{
+		Use:   "chain",
+		Short: "CLI for the Dummy Chain",
 	}
 
-	node := core.NewNode(
-		cliOpts.StoreDir,
-		cliOpts.BlockRate,
-		cliOpts.GenesisHeight,
+	root.AddCommand(
+		makeInitCommand(),
+		makeResetCommand(),
+		makeStartComand(),
 	)
 
-	if err := node.Initialize(); err != nil {
-		logrus.WithError(err).Fatal("node failed to initialize")
-		return
+	root.Execute()
+}
+
+func makeInitCommand() *cobra.Command {
+	return &cobra.Command{
+		Use: "init",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			logrus.WithField("dir", cliOpts.StoreDir).Info("initializing chain store")
+
+			store := core.NewStore(cliOpts.StoreDir)
+			return store.Initialize()
+		},
 	}
+}
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+func makeResetCommand() *cobra.Command {
+	return &cobra.Command{
+		Use:   "reset",
+		Short: "Reset local blockchain state",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			logrus.WithField("dir", cliOpts.StoreDir).Info("removing chain store")
 
-	go func() {
-		sig := waitForSignal()
-		logrus.WithField("signal", sig).Info("shutting down")
-		cancel()
-	}()
+			err := os.RemoveAll(cliOpts.StoreDir)
+			if err != nil {
+				logrus.WithError(err).Error("cant remove the chain store directory")
+			}
 
-	if err := node.Start(ctx); err != nil {
-		logrus.WithError(err).Fatal("node terminated with error")
-	} else {
-		logrus.Info("node terminated")
+			return err
+		},
+	}
+}
+
+func makeStartComand() *cobra.Command {
+	return &cobra.Command{
+		Use: "start",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			// TODO: expose this as a flag too
+			if os.Getenv("DM_ENABLED") == "1" {
+				initDeepMind()
+				defer deepmind.Shutdown()
+			}
+
+			node := core.NewNode(
+				cliOpts.StoreDir,
+				cliOpts.BlockRate,
+				cliOpts.GenesisHeight,
+			)
+
+			if err := node.Initialize(); err != nil {
+				logrus.WithError(err).Fatal("node failed to initialize")
+				return err
+			}
+
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+
+			go func() {
+				sig := waitForSignal()
+				logrus.WithField("signal", sig).Info("shutting down")
+				cancel()
+			}()
+
+			if err := node.Start(ctx); err != nil {
+				logrus.WithError(err).Fatal("node terminated with error")
+			} else {
+				logrus.Info("node terminated")
+			}
+
+			return nil
+		},
 	}
 }
 
