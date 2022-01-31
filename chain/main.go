@@ -2,11 +2,11 @@ package main
 
 import (
 	"context"
+	"errors"
 	"os"
 	"os/signal"
 	"syscall"
 
-	"github.com/jessevdk/go-flags"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
@@ -22,8 +22,18 @@ var cliOpts = struct {
 }{}
 
 func main() {
-	if _, err := flags.ParseArgs(&cliOpts, os.Args); err != nil {
-		return
+	root := cobra.Command{
+		Use:   "chain",
+		Short: "CLI for the Dummy Chain",
+	}
+
+	root.PersistentFlags().Uint64Var(&cliOpts.GenesisHeight, "genesis-height", 1, "Blockchain genesis height")
+	root.PersistentFlags().StringVar(&cliOpts.LogLevel, "log-level", "info", "Logging level")
+	root.PersistentFlags().StringVar(&cliOpts.StoreDir, "store-dir", "./data", "Directory for storing blockchain state")
+	root.PersistentFlags().IntVar(&cliOpts.BlockRate, "block-rate", 1, "Block production rate (per second)")
+
+	if err := root.ParseFlags(os.Args); err != nil {
+		logrus.Fatal(err)
 	}
 
 	level, err := logrus.ParseLevel(cliOpts.LogLevel)
@@ -31,17 +41,8 @@ func main() {
 		logrus.Fatal(err)
 	}
 
-	if cliOpts.BlockRate < 1 {
-		logrus.Fatal("block rate option must be greater than 1")
-	}
-
 	logrus.SetLevel(level)
 	logrus.SetFormatter(&logrus.TextFormatter{FullTimestamp: true})
-
-	root := cobra.Command{
-		Use:   "chain",
-		Short: "CLI for the Dummy Chain",
-	}
 
 	root.AddCommand(
 		makeInitCommand(),
@@ -54,7 +55,8 @@ func main() {
 
 func makeInitCommand() *cobra.Command {
 	return &cobra.Command{
-		Use: "init",
+		Use:   "init",
+		Short: "Initialize local blockchain state",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			logrus.WithField("dir", cliOpts.StoreDir).Info("initializing chain store")
 
@@ -83,8 +85,13 @@ func makeResetCommand() *cobra.Command {
 
 func makeStartComand() *cobra.Command {
 	return &cobra.Command{
-		Use: "start",
+		Use:   "start",
+		Short: "Start blockchian service",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if cliOpts.BlockRate < 1 {
+				return errors.New("block rate option must be greater than 1")
+			}
+
 			// TODO: expose this as a flag too
 			if os.Getenv("DM_ENABLED") == "1" {
 				initDeepMind()

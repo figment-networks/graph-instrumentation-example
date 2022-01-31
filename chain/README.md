@@ -37,23 +37,32 @@ make build
 Run `./chain --help` to see list of all available flags:
 
 ```
+CLI for the Dummy Chain
+
 Usage:
-  chain [OPTIONS]
+  chain [command]
 
-Application Options:
-      --genesis-height= Blockhain genesis height (default: 1)
-      --log-level=      Logging level (default: info)
-      --store-dir=      Directory for storing blocks data (default: ./data)
-      --block-rate=     Block production rate (per second) (default: 1)
+Available Commands:
+  completion  Generate the autocompletion script for the specified shell
+  help        Help about any command
+  init        Initialize local blockchain state
+  reset       Reset local blockchain state
+  start       Start blockchian service
 
-Help Options:
-  -h, --help            Show this help message
+Flags:
+      --block-rate int        Block production rate (per second) (default 1)
+      --genesis-height uint   Blockchain genesis height (default 1)
+  -h, --help                  help for chain
+      --log-level string      Logging level (default "info")
+      --store-dir string      Directory for storing blockchain state (default "./data")
+
+Use "chain [command] --help" for more information about a command.
 ```
 
 To start the chain, run:
 
 ```shell
-./chain
+./chain start
 ```
 
 You'll start seeing output like:
